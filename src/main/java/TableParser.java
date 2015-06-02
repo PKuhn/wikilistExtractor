@@ -8,10 +8,18 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+
 import org.apache.commons.lang3.StringUtils;
 
 
 public class TableParser {
+    public String[][] getTableFromName(String pageName) {
+        Element table = getTableElementByName(pageName);
+
+        String[][] stringTable = readTableFromHtml(table);
+        return stringTable;
+    }
+
     private String[][] readTableFromHtml(Element table) {
         Elements rows = table.select("tr");
         int rowCount = rows.size();
@@ -30,20 +38,30 @@ public class TableParser {
         return result;
     }
 
-    private Element getTableFromName(String tableName) throws IOException {
-        String url = "http://en.wikipedia.org/wiki/" + tableName;
-        Element table;
-        Document doc = Jsoup.connect(url).get();
+    //TODO refactor name
+    public TableEntry[][] getTable(Element table) {
+        //select relevant rows
+        Elements rows = table.select("tr");
+        int rowCount = rows.size();
 
-        //get first table in document
-        table = doc.select("table").get(0);
-        if (table.select("tr").size() <= 3) {
-            table = doc.select("table").get(1);
+        // select column count from second row since first is header <th>
+        int colCount = rows.get(1).select("td").size();
+
+        //TODO change data structure to something that allows dynamic row count
+        TableEntry[][] result = new TableEntry[rowCount - 1][colCount];
+
+        for (int i = 1; i < rows.size(); i++) {
+            Element row = rows.get(i);
+            //TODO check if row is valid before adding to the Array
+            Elements cols = row.select("td");
+            for (int j = 0; j < cols.size(); j++) {
+                result[i - 1][j] = new TableEntry(cols.get(j));
+            }
         }
-        return table;
+        return result;
     }
 
-    private String[] getColumnNames(Element table) {
+    public String[] getColumnNames(Element table) {
         // get the first row
         ArrayList<String> result = new ArrayList<>();
         Element firstRow = table.select("tr").get(0);
@@ -53,6 +71,24 @@ public class TableParser {
             result.add(columnName);
         }
         return result.toArray(new String[result.size()]);
+    }
+
+    public Element getTableElementByName(String pageName) {
+        String url = "http://en.wikipedia.org/wiki/" + pageName;
+        Element table;
+        Document doc = null;
+        try {
+            doc = Jsoup.connect(url).get();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        //get first table in document
+        table = doc.select("table").get(0);
+        if (table.select("tr").size() <= 3) {
+            table = doc.select("table").get(1);
+        }
+        return table;
     }
 
     private String getTitleFromLink(Element cell) {
@@ -67,7 +103,7 @@ public class TableParser {
         return title;
     }
 
-    private List<String> getLinkTitlesForColumn(Element table, int index) {
+    public List<String> getLinkTitlesForColumn(Element table, int index) {
         Elements rows = table.select("tr");
         List<String> linkTitles = new LinkedList<>();
         for (Element row : rows.subList(1, rows.size())) {

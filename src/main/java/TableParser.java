@@ -13,30 +13,40 @@ import org.apache.commons.lang3.StringUtils;
 
 
 public class TableParser {
-    public String[][] getTableFromName(String pageName) {
-        Element table = getTableElementByName(pageName);
 
-        String[][] stringTable = readTableFromHtml(table);
-        return stringTable;
+    public RDFTable createRDFTable(String pageName) {
+        Element table = getTableElementByName(pageName);
+        return  parseToRDFTable(table);
     }
 
-    private String[][] readTableFromHtml(Element table) {
+    public RDFTable parseToRDFTable(Element table) {
         Elements rows = table.select("tr");
-        int rowCount = rows.size();
-        int colCount = rows.get(1).select("td").size();
 
-        //take table without first row because this is header row
-        String[][] result = new String[rowCount - 1][colCount];
-        for (int i = 1; i < rows.size(); i++) {
-            Element row = rows.get(i);
-            Elements cols = row.select("td");
-            for (int j = 0; j < cols.size(); j++) {
-                result[i - 1][j] = cols.get(j).text();
+        int colCount = rows.get(1).select("td").size();
+        RDFTable result = new RDFTable(colCount);
+
+        for (Element row : rows) {
+            Elements cells;
+
+            if (row.toString().contains("<th")) {
+                cells = row.select("th");
+            } else {
+                cells = row.select("td");
             }
+
+            ArrayList<TableEntry> entryRow = new ArrayList<>();
+
+            for (Element cell : cells) {
+                TableEntry entry = new TableEntry(cell);
+                entryRow.add(entry);
+            }
+
+            result.insertRow(entryRow.toArray(new TableEntry[entryRow.size()]));
         }
 
         return result;
     }
+
 
     //TODO refactor name
     public TableEntry[][] getTable(Element table) {
@@ -59,18 +69,6 @@ public class TableParser {
             }
         }
         return result;
-    }
-
-    public String[] getColumnNames(Element table) {
-        // get the first row
-        ArrayList<String> result = new ArrayList<>();
-        Element firstRow = table.select("tr").get(0);
-        Elements cols = firstRow.select("th");
-        for (Element col : cols) {
-            String columnName = col.text();
-            result.add(columnName);
-        }
-        return result.toArray(new String[result.size()]);
     }
 
     public Element getTableElementByName(String pageName) {

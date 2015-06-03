@@ -18,7 +18,7 @@ public class SPARQLHelper {
 
         try {
             ResultSet predicates = qexec.execSelect();
-            ResultSetFormatter.out(System.out, predicates, query);
+            //ResultSetFormatter.out(System.out, predicates, query);
 
             while (predicates.hasNext()) {
                 QuerySolution solution = predicates.next();
@@ -61,6 +61,32 @@ public class SPARQLHelper {
         }
         return matchedProperties;
     }
+    public List<String> getPredicatesBetweenEntityAndLiteral(String entityName, String literal) {
+        String queryString = buildPredicateBetweenEntityAndLiteral(entityName, literal);
+
+        Query query = QueryFactory.create(queryString);
+
+        QueryEngineHTTP qexec = (QueryEngineHTTP) QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+        qexec.setSelectContentType(WebContent.contentTypeResultsJSON);
+
+        List<String> matchedProperties = new LinkedList<>();
+
+        try {
+            ResultSet predicates = qexec.execSelect();
+            ResultSetFormatter.out(System.out, predicates, query);
+
+            while (predicates.hasNext()) {
+                QuerySolution solution = predicates.next();
+                matchedProperties.add(solution.toString());
+            }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+        finally {
+            qexec.close();
+        }
+        return matchedProperties;
+    }
 
     private String buildPredicateBetweenEntitiesQuery(String name1, String name2) {
 
@@ -72,6 +98,17 @@ public class SPARQLHelper {
         return query;
     }
 
+    private String buildPredicateBetweenEntityAndLiteral(String entityName, String literal) {
+        if (!StringUtils.isNumeric(literal)) {
+            literal = "\"" + literal + "\"";
+        }
+        String query =
+                "SELECT ?predicate { " +
+                        "<http://dbpedia.org/resource/" + entityName + "> ?predicate "  + literal +"." +
+                        "}";
+        return query;
+
+    }
     private String getSimpleString() {
         return "SELECT ?s WHERE {?s ?o ?p.} LIMIT 5";
     }

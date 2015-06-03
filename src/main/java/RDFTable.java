@@ -1,5 +1,4 @@
 import org.apache.commons.lang3.StringUtils;
-import org.jsoup.nodes.Element;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -19,7 +18,7 @@ public class RDFTable {
             //TODO throw useful exception
             System.out.println("wrong number of columns");
         }
-        rowCount = row.length;
+        rowCount++;
         table.add(row);
     }
 
@@ -27,7 +26,7 @@ public class RDFTable {
         return rowCount;
     }
 
-    public List<String> getColumnNames(int index) {
+    public List<String> getColumnNames() {
         List<String> columnNames = new LinkedList<>();
         TableEntry[] firstRow = table.get(0);
         for (TableEntry entry : firstRow) {
@@ -51,6 +50,10 @@ public class RDFTable {
 
     public TableEntry getElement(int i, int j) {
         return table.get(i)[j];
+    }
+
+    public int getColumnCount() {
+        return colCount;
     }
 
     public List<String> getColumnAsRDF(int index) {

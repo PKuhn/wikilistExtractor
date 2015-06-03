@@ -1,3 +1,6 @@
+import org.apache.commons.lang3.StringUtils;
+import org.jsoup.nodes.Element;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -5,7 +8,7 @@ import java.util.List;
 public class RDFTable {
     ArrayList<TableEntry[]> table = new ArrayList<>();
     private int colCount;
-
+    private int rowCount = 0;
 
     RDFTable(int columnCount) {
         colCount = columnCount;
@@ -16,7 +19,12 @@ public class RDFTable {
             //TODO throw useful exception
             System.out.println("wrong number of columns");
         }
+        rowCount = row.length;
         table.add(row);
+    }
+
+    public int getRowCount() {
+        return rowCount;
     }
 
     public List<String> getColumnNames(int index) {
@@ -39,6 +47,38 @@ public class RDFTable {
         }
 
         return textArray;
+    }
+
+    public TableEntry getElement(int i, int j) {
+        return table.get(i)[j];
+    }
+
+    public List<String> getColumnAsRDF(int index) {
+        List<String> columnAsRDF = new LinkedList<>();
+        for (TableEntry[] row : table) {
+            if (row.toString().contains("<th")) {
+                //skip header row
+                continue;
+            }
+
+            String rawString = row[index].getRawContent();
+            String title = getTitleFromLink(rawString);
+
+            columnAsRDF.add(title);
+
+        }
+        return columnAsRDF;
+    }
+
+    private String getTitleFromLink(String rawString) {
+        if (rawString.contains("(page does not exist)")) {
+            return "";
+        }
+        String title = StringUtils.substringBetween(rawString, "title=\"", "\"");
+        if (title == null) {
+            return "";
+        }
+        return title;
     }
 
     public void printTable() {

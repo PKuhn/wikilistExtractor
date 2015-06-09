@@ -10,6 +10,7 @@ public class TableEntry {
     TableEntry(Element tableCell) {
         textContent = tableCell.text();
         tableEntry = tableCell;
+        isLiteral = !tableEntry.toString().contains("href");
     }
 
     public boolean isLiteral() {
@@ -38,5 +39,10 @@ public class TableEntry {
             return "";
         }
         return title.replace(' ', '_');
+    }
+
+    public boolean isDbpediaEntity() {
+        SPARQLHelper helper = new SPARQLHelper();
+        return helper.isDbpediaEntity(this);
     }
 }

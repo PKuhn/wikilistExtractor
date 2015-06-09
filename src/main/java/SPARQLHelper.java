@@ -8,7 +8,31 @@ import java.util.List;
 
 public class SPARQLHelper {
 
+
     //TODO merge functions and find generalisation for query
+
+    public boolean isDbpediaEntity(TableEntry entry) {
+        List<String> properties = new LinkedList<>();
+        String name= entry.getRDFTitle();
+        String queryString;
+
+        if (entry.isLiteral()) {
+            queryString = isLiteralEntityQueryString(name);
+        } else {
+            queryString = isLiteralEntityQueryString(name);
+        }
+
+        Query query = QueryFactory.create(queryString);
+
+        QueryEngineHTTP qexec = (QueryEngineHTTP) QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+        qexec.setSelectContentType(WebContent.contentTypeResultsJSON);
+        ResultSet results = qexec.execSelect();
+
+        Boolean temp = results.hasNext();
+
+        qexec.close();
+        return temp;
+    }
 
     public List<String> getPropertiesForEntity(String name) {
         String queryString = buildPredicateQuery(name);
@@ -121,5 +145,16 @@ public class SPARQLHelper {
         return query;
     }
 
+    private String isLiteralEntityQueryString(String name) {
+        String query =
+        "SELECT * {{" +
+            "SELECT ?predicate {" + "<http://dbpedia.org/resource/" + name + "> ?predicate ?object. " + "}" +
+        "}" +
+         "UNION" + "{ "+ "SELECT ?subject " +
+                "{" + "?subject ?predicate " + "<http://dbpedia.org/resource/" + name +">}"
+       + "} }";
+
+        return query;
+    }
 
 }

@@ -40,6 +40,8 @@ public class PredicateMatcher {
             TableEntry entryOfFirstColumn = table.getElement(i, firstColumn);
             TableEntry entryOfSecondColumn = table.getElement(i, secondColumn);
 
+            entryOfFirstColumn.isDbpediaEntity();
+
             String name1 = entryOfFirstColumn.getRDFTitle();
             String name2 = entryOfSecondColumn.getRDFTitle();
 

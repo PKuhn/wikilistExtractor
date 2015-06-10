@@ -22,6 +22,16 @@ public class RDFTable {
         table.add(row);
     }
 
+    public List<Boolean> getColumnIsDBpediaEntry(int columnIndex) {
+        List<Boolean> entryStatus = new ArrayList<>();
+        for (TableEntry[] row : table) {
+            TableEntry entry = row[columnIndex];
+            entryStatus.add(entry.isDbpediaEntity());
+            System.out.println(entry.isDbpediaEntity() + " " + entry.getTextContent());
+        }
+        return entryStatus;
+    }
+
     public int getRowCount() {
         return rowCount;
     }

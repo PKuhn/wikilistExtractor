@@ -13,12 +13,14 @@ public class SPARQLHelper {
 
     public boolean isDbpediaEntity(TableEntry entry) {
         List<String> properties = new LinkedList<>();
-        String name= entry.getRDFTitle();
+        String name;
         String queryString;
 
-        if (entry.isLiteral()) {
+        if (entry.isLink()) {
+            name= entry.getRDFTitle();
             queryString = isLiteralEntityQueryString(name);
         } else {
+            name= entry.getTextContent();
             queryString = isLiteralEntityQueryString(name);
         }
 

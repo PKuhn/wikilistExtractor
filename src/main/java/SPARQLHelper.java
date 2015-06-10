@@ -11,6 +11,42 @@ public class SPARQLHelper {
 
     //TODO merge functions and find generalisation for query
 
+    public String getRedirectedStringIfNeeded(TableEntry entry) {
+        List<String> properties = new LinkedList<>();
+        String name;
+        if (entry.isLink()) {
+            name= entry.getRDFTitle();
+        } else {
+            name= entry.getTextContent();
+        }
+
+        String queryString = buildPredicateQuery(name);
+        Query query = QueryFactory.create(queryString);
+
+        QueryEngineHTTP qexec = (QueryEngineHTTP) QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+        qexec.setSelectContentType(WebContent.contentTypeResultsJSON);
+        ResultSet results = qexec.execSelect();
+        while(results.hasNext()) {
+            QuerySolution solution = results.next();
+           if (solution.toString().contains("Redirects")) {
+               return getRedirectionString(name);
+           };
+        }
+        return name;
+    }
+
+    private String getRedirectionString(String name) {
+        String queryString = getRedirectionQuery(name);
+        Query query = QueryFactory.create(queryString);
+
+        QueryEngineHTTP qexec = (QueryEngineHTTP) QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+        qexec.setSelectContentType(WebContent.contentTypeResultsJSON);
+        ResultSet results = qexec.execSelect();
+        QuerySolution sol = results.next();
+        String strippedResult = StringUtils.substringBetween(sol.toString(), "<http://dbpedia.org/resource/", ">");
+        return strippedResult;
+    }
+
     public boolean isDbpediaEntity(TableEntry entry) {
         List<String> properties = new LinkedList<>();
         String name;
@@ -73,7 +109,7 @@ public class SPARQLHelper {
 
         try {
             ResultSet predicates = qexec.execSelect();
-            ResultSetFormatter.out(System.out, predicates, query);
+            //ResultSetFormatter.out(System.out, predicates, query);
 
             while (predicates.hasNext()) {
                 QuerySolution solution = predicates.next();
@@ -99,7 +135,7 @@ public class SPARQLHelper {
 
         try {
             ResultSet predicates = qexec.execSelect();
-            ResultSetFormatter.out(System.out, predicates, query);
+            //ResultSetFormatter.out(System.out, predicates, query);
 
             while (predicates.hasNext()) {
                 QuerySolution solution = predicates.next();
@@ -126,7 +162,7 @@ public class SPARQLHelper {
 
     private String buildPredicateBetweenEntityAndLiteral(String entityName, String literal) {
         if (!StringUtils.isNumeric(literal)) {
-            literal = "\"" + literal + "\"";
+            literal = "\"" + literal + "\"" + "@en";
         }
         String query =
                 "SELECT ?predicate { " +
@@ -135,6 +171,15 @@ public class SPARQLHelper {
         return query;
 
     }
+
+    private String getRedirectionQuery(String name ) {
+        String query =
+        "SELECT ?object {" +
+                "<http://dbpedia.org/resource/" + name + "> <http://dbpedia.org/ontology/wikiPageRedirects> ?object. " +
+                " } ";
+        return query;
+    }
+
     private String getSimpleString() {
         return "SELECT ?s WHERE {?s ?o ?p.} LIMIT 5";
     }

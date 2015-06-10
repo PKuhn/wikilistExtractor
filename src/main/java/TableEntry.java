@@ -47,15 +47,16 @@ public class TableEntry {
 
     public String getRDFTitle() {
         String content = stripTextBetweenBrackets(tableEntry.toString());
-
         if (content.contains("(page does not exist)")) {
             return "";
         }
         String title = StringUtils.substringBetween(content, "title=\"", "\"");
+
         if (title == null) {
             return "";
         }
-        return title.replace(' ', '_');
+        title = title.replace(' ', '_');
+        return title;
     }
 
     public boolean isDbpediaEntity() {

@@ -1,3 +1,4 @@
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -7,9 +8,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-
-
-import org.apache.commons.lang3.StringUtils;
 
 
 public class TableParser {
@@ -91,6 +89,7 @@ public class TableParser {
 
     private String getTitleFromLink(Element cell) {
         String content = cell.toString();
+
         if (content.contains("(page does not exist)")) {
             return "";
         }

@@ -83,6 +83,22 @@ public class RDFTable {
         return columnAsRDF;
     }
 
+    public List<String> getColumnRedirects(int columnIndex) {
+        List<String> columnRedirects = new LinkedList<>();
+        SPARQLHelper helper = new SPARQLHelper();
+        for (TableEntry[] row : table) {
+            if (row.toString().contains("<th")) {
+                //skip header row
+                continue;
+            }
+
+            TableEntry entry = row[columnIndex];
+            helper.getRedirectedStringIfNeeded(entry);
+            columnRedirects.add(helper.getRedirectedStringIfNeeded(entry));
+        }
+        return columnRedirects;
+    }
+
     private String getTitleFromLink(String rawString) {
         if (rawString.contains("(page does not exist)")) {
             return "";

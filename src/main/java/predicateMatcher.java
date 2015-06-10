@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -14,7 +15,9 @@ public class PredicateMatcher {
         RDFTable table = parser.createRDFTable(pageName);
         int rowCount = table.getRowCount();
         List<String> tableNames = table.getColumnNames();
-
+        System.out.println(table.getColumnRedirects(0));
+        int matches = matchColumns(0, 2, table);
+        //System.out.println(matches);
         /*for (int i = 0; i < table.getColumnCount() -1; i++) {
             for (int j = i + 1; j < table.getColumnCount(); j++) {
                 int matchedCount = matchColumns(i, j, table);
@@ -25,14 +28,13 @@ public class PredicateMatcher {
                 }
             }
         }*/
-        for (int i = 1; i < table.getColumnCount(); i++) {
-            int matchedCount = matchColumns(0, i, table);
-        }
+        //for (int i = 1; i < table.getColumnCount(); i++) {
+        //    int matchedCount = matchColumns(0, i, table);
+        //}
     }
 
     private int matchColumns(int firstColumn, int secondColumn, RDFTable table) {
         int rowCount = table.getRowCount();
-        SPARQLHelper helper = new SPARQLHelper();
 
         int matchedEntries = 0;
 
@@ -40,22 +42,24 @@ public class PredicateMatcher {
             TableEntry entryOfFirstColumn = table.getElement(i, firstColumn);
             TableEntry entryOfSecondColumn = table.getElement(i, secondColumn);
 
-            entryOfFirstColumn.isDbpediaEntity();
-
-            String name1 = entryOfFirstColumn.getRDFTitle();
-            String name2 = entryOfSecondColumn.getRDFTitle();
-
-            List<String> predicates = new LinkedList<>();
-
-            if (name2.equals("")) {
-                String literal = entryOfSecondColumn.getTextContent();
-                predicates = helper.getPredicatesBetweenEntityAndLiteral(name1, literal);
-                System.out.println("Finding predicates between: " + name1 + " and " + literal);
-
-            } else {
-                System.out.println("Finding predicates between: " + name1 + " and " + name2);
-                predicates = helper.getPredicatesBetweenEntities(name1, name2);
+            List<String> predicates = new ArrayList<>();
+            if (entryOfFirstColumn.isDbpediaEntity() && entryOfSecondColumn.isDbpediaEntity() && !entryOfSecondColumn.isLink()) {
+                predicates = getPredicatesBetweenEntities(entryOfFirstColumn,entryOfSecondColumn);
+                predicates.addAll(getPredicatesBetweenEntityAndLiteral(entryOfFirstColumn, entryOfSecondColumn));
             }
+            else if (entryOfFirstColumn.isDbpediaEntity() && entryOfSecondColumn.isDbpediaEntity()) {
+                predicates = getPredicatesBetweenEntities(entryOfFirstColumn, entryOfSecondColumn);
+            }
+            else if (entryOfFirstColumn.isDbpediaEntity() && !entryOfSecondColumn.isDbpediaEntity())    {
+                predicates = getPredicatesBetweenEntityAndLiteral(entryOfFirstColumn, entryOfSecondColumn);
+            }
+            else if (entryOfSecondColumn.isDbpediaEntity() &&  !entryOfFirstColumn.isDbpediaEntity()){
+                predicates = getPredicatesBetweenEntityAndLiteral(entryOfSecondColumn, entryOfFirstColumn);
+            }
+            else {
+                return 0;
+            }
+
             System.out.println(predicates.toString());
             if (predicates.size() != 0) {
                 matchedEntries++;
@@ -63,5 +67,37 @@ public class PredicateMatcher {
         }
 
         return matchedEntries;
+    }
+    private List<String> getPredicatesBetweenEntities(TableEntry entryOfFirstColumn, TableEntry entryOfSecondColumn) {
+        SPARQLHelper helper = new SPARQLHelper();
+
+        List<String> predicates = new LinkedList<>();
+        String name1;
+        String name2;
+        if (entryOfFirstColumn.isLink()){
+            name1 = helper.getRedirectedStringIfNeeded(entryOfFirstColumn);
+        } else {
+            name1 = entryOfFirstColumn.getTextContent();
+        }
+        if (entryOfSecondColumn.isLink()){
+            name2 = helper.getRedirectedStringIfNeeded(entryOfSecondColumn);
+        } else {
+            name2 = entryOfSecondColumn.getTextContent();
+        }
+
+        predicates = helper.getPredicatesBetweenEntities(name1, name2);
+        return predicates;
+    }
+
+    private List<String> getPredicatesBetweenEntityAndLiteral(TableEntry entry, TableEntry literalEntry) {
+        SPARQLHelper helper = new SPARQLHelper();
+
+        List<String> predicates = new LinkedList<>();
+        String literal = literalEntry.getTextContent();
+        String name = helper.getRedirectedStringIfNeeded(entry);
+
+        predicates = helper.getPredicatesBetweenEntityAndLiteral(name, literal);
+        System.out.println("Finding predicates between: " + name + " and " + literal);
+        return predicates;
     }
 }
